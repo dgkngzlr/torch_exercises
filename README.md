@@ -1,2 +1,2 @@
 # torch_exercises
-Deep learning practices
+->Deep learning practices
