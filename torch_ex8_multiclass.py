@@ -80,6 +80,7 @@ def plt_data(X,y):
 
     plt.legend()
 
+# 5 class blob dataset
 X, y = datasets.make_blobs(n_samples=1000,
                            centers=5,
                            n_features=2,
