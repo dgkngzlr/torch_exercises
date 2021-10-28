@@ -56,11 +56,11 @@ data_loader = DataLoader(dataset=dataset, batch_size=32, shuffle=True)
 
 pred_rate = []
 # For each experiment 8, 16, 32, 64, 128
-for i in range(3, 8):
+for i in range(0, 8):
 
     model = Net(4, 3, 2**i)
     model.train()
-
+    print(model)
     # --loss
     criterion = nn.CrossEntropyLoss()
 
@@ -122,5 +122,5 @@ for i in range(3, 8):
 
 plt.xlabel("n_neuron")
 plt.ylabel("Pred. Rate")
-plt.bar([2**i for i in range(3,8)], pred_rate)
+plt.bar([2**i for i in range(0,8)], pred_rate)
 plt.show()
