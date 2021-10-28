@@ -7,6 +7,7 @@ from sklearn.model_selection import train_test_split
 import sklearn.datasets as datasets
 from sklearn.metrics import confusion_matrix
 import time
+from torchsummary import summary
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -82,6 +83,7 @@ print(50 * "=")
 print(f"Total Epoch : {n_epoch} Iter per Epoch : {n_iter}")
 print(50 * "=")
 losses = []
+summary(model, (1,8))
 for ep in range(n_epoch):
 
     for i ,(inputs, outputs) in enumerate(dataloader):
