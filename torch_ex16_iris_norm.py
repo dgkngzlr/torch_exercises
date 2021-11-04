@@ -121,9 +121,9 @@ with torch.no_grad():
     for inputs,label in test_loader:
 
         y_hat = model.forward(inputs)
-        print(y_hat)
+        
         y_hat = sm(y_hat)
-        print(y_hat)
+        
         y_hat = torch.argmax(y_hat, axis=1)
         y_hat = y_hat.numpy().reshape(-1,1)
         label = label.numpy().reshape(-1,1)
