@@ -14,52 +14,63 @@ class Net(nn.Module):
     def __init__(self, input_size):
         super().__init__()
 
-        self.fc1 = nn.Linear(input_size, 16)
-        self.bn1 = nn.BatchNorm1d(16)
-        self.fc2 = nn.Linear(16, 32)
-        self.bn2 = nn.BatchNorm1d(32)
-        self.fc3 = nn.Linear(32, 32)
-        self.bn3 = nn.BatchNorm1d(32)
-        self.fc4 = nn.Linear(32,16)
-        self.bn4 = nn.BatchNorm1d(16)
-        self.fc5 = nn.Linear(16, 1)
+        self.fc1 = nn.Linear(input_size, 256)
+        #self.bn1 = nn.BatchNorm1d(64)
+        self.fc2 = nn.Linear(256, 64)
+        #self.bn2 = nn.BatchNorm1d(128)
+        self.fc3 = nn.Linear(64, 64)
+        self.bn3 = nn.BatchNorm1d(64)
+        self.fc4 = nn.Linear(64, 64)
+        self.fc5 = nn.Linear(64,32)
+        #self.bn4 = nn.BatchNorm1d(64)
+        self.fc6 = nn.Linear(32, 1)
+
+        
 
     def forward(self, x):
 
         x = self.fc1(x)
-        x = self.bn1(x)
+        #x = self.bn1(x)
         x = F.relu(x)
 
         x = self.fc2(x)
-        x = self.bn2(x)
+        #x = self.bn2(x)
         x = F.relu(x)
+        
 
         x = self.fc3(x)
         x = self.bn3(x)
         x = F.relu(x)
+        
 
         x = self.fc4(x)
-        x = self.bn4(x)
+        #x = self.bn4(x)
         x = F.relu(x)
+        
 
         x = self.fc5(x)
+        x = torch.relu(x)
+
+        x = self.fc6(x)
         x = torch.sigmoid(x)
 
         return x
     
     def train_model(self, train_loader: DataLoader, dev_loader: DataLoader):
         
-        n_epoch = 100
-        lr = 0.001
+        n_epoch = 1000
+        lr = 0.01
+        weight_decay = 1e-4
 
         criterion = nn.BCELoss()
 
-        optim = torch.optim.Adam(self.parameters(), lr=lr)
+        optim = torch.optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
 
         epoch_losses = []
         dev_accs = []
 
         best_acc = 0
+        prev_loss = 1e4
         for ep in range(n_epoch):
             
             step_losses = []
@@ -80,9 +91,10 @@ class Net(nn.Module):
             dev_acc = self.get_dev_acc(dev_loader)
             dev_accs.append(dev_acc)
             
-            if dev_acc > best_acc:
+            if dev_acc >= best_acc and epoch_losses[ep] < prev_loss:
                 best_acc = dev_acc
-                torch.save(self.state_dict(), "water_best.pt")
+                prev_loss = epoch_losses[ep]
+                torch.save(self.state_dict(), "heart_best.pt")
                 print("Best model saved !")
 
             if (ep+1) % 10 == 0:
@@ -144,7 +156,7 @@ class Net(nn.Module):
 
         return score
 
-class WaterDataset(Dataset):
+class HeartDataset(Dataset):
 
     def __init__(self, X, y):
         super().__init__()
@@ -173,13 +185,10 @@ def get_standardized_features(X, mean=[], std=[]):
         X = (X - mean) / std
         return X
 
-data = pd.read_csv("./datasets/water_potability_class.csv", delimiter=",")
+data = pd.read_csv("./datasets/heart.csv", delimiter=",")
 
-X = data.iloc[:, :9]
-
-# Fill NaN values with means
-X = data.fillna(X.mean()).to_numpy()
-y = data.iloc[:, -1].to_numpy()
+X = data.iloc[:,:13].to_numpy()
+y = data.iloc[:, -1].to_numpy().reshape(-1,1)
 
 X_train, X_temp, y_train, y_temp = train_test_split(X, y, train_size=0.8, shuffle=True)
 X_test, X_dev, y_test, y_dev = train_test_split(X_temp, y_temp, train_size=0.5, shuffle=True)
@@ -191,27 +200,20 @@ X_train = get_standardized_features(X_train)
 X_test = get_standardized_features(X_test, mean=train_mean, std=train_std)
 X_dev = get_standardized_features(X_dev, mean=train_mean, std=train_std)
 
-train_dataset = WaterDataset(X_train, y_train)
-dev_dataset = WaterDataset(X_dev, y_dev)
-test_dataset = WaterDataset(X_test, y_test)
+train_dataset = HeartDataset(X_train, y_train)
+dev_dataset = HeartDataset(X_dev, y_dev)
+test_dataset = HeartDataset(X_test, y_test)
 
-batch_size = 64
+batch_size = 16
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 dev_loader = DataLoader(dev_dataset, batch_size=len(dev_dataset), shuffle=False)
 test_loader = DataLoader(test_dataset, batch_size=len(test_dataset), shuffle=False)
 
-model = Net(10)
+
+model = Net(13)
 model.train()
 model.train_model(train_loader, dev_loader)
-
+model.load_state_dict(torch.load("heart_best.pt"))
+model.eval()
 score = model.get_test_acc(test_loader)
 print(score)
-
-
-
-
-
-
-
-
-
